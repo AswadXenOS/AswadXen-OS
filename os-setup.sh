@@ -1,3 +1,65 @@
+cat <<'EOF' > os-setup.sh
+#!/data/data/com.termux/files/usr/bin/bash
+
+echo "🚀 Memulakan Setup AswadXenOS..."
+
+# Update sistem Termux
+pkg update -y && pkg upgrade -y
+
+# Pasang keperluan asas
+pkg install -y nodejs-lts git curl nano
+
+# Konfigurasi Git
+git config --global user.name "AswadXenOS"
+git config --global user.email "xenistaswad@gmail.com"
+
+# Setup backend
+mkdir -p backend && cd backend
+npm init -y
+npm install express sqlite bcryptjs cors
+cat <<EOL > index.js
+const express = require('express');
+const app = express();
+const cors = require('cors');
+const sqlite = require('sqlite');
+const bcrypt = require('bcryptjs');
+app.use(cors());
+app.use(express.json());
+app.get('/', (req, res) => res.send('Backend siap!'));
+app.listen(5000, () => console.log('🚀 Backend running on http://localhost:5000'));
+EOL
+cd ..
+
+# Setup frontend
+npm create vite@latest frontend -- --template react
+cd frontend
+npm install
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+sed -i 's/content: /content: ["..\/index.html", ".\/src\/*\*\/\*.jsx"]/g' tailwind.config.js
+echo -e "@tailwind base;\n@tailwind components;\n@tailwind utilities;" > src/index.css
+cd ..
+
+# Setup GPT bot
+mkdir -p bot && cd bot
+npm init -y
+npm install axios
+cat <<EOB > bot.js
+const axios = require('axios');
+const prompt = 'Hello GPT!';
+const key = process.env.OPENAI_API_KEY;
+axios.post('https://api.openai.com/v1/chat/completions', {
+  model: "gpt-3.5-turbo",
+  messages: [{ role: "user", content: prompt }]
+}, {
+  headers: { Authorization: \`Bearer \${key}\` }
+}).then(res => console.log(res.data.choices[0].message.content))
+.catch(err => console.error("Bot error:", err.response.data));
+EOB
+cd ..
+
+echo "✅ Siap! Buka frontend dan backend secara manual jika perlu."
+EOF
 #!/data/data/com.termux/files/usr/bin/bash
 
 echo "🚀 Memulakan Setup AswadXenOS..."
